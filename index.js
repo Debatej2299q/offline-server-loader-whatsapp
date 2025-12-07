@@ -35,7 +35,25 @@ const {
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+// =============================
+// HOME PAGE ROUTE
+// =============================
+app.get("/", (req, res) => {
+    res.send(`
+    <html>
+    <head>
+        <title>Offline WhatsApp Loader</title>
+    </head>
+    <body style="background:#0B1221;color:white;font-family:Arial;padding:20px;">
+        <h2>Offline Server Loader for WhatsApp</h2>
+        <p>Choose an option:</p>
 
+        <a href="/pairing" style="color:#00f;font-size:18px;">👉 Go to Pairing Page</a><br><br>
+        <a href="/broadcast" style="color:#0f0;font-size:18px;">👉 Go to Broadcast Page</a>
+    </body>
+    </html>
+    `);
+});
 const PORT = process.env.PORT || 3000;
 const SESSIONS_DIR = path.join(__dirname, "sessions");
 
