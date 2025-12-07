@@ -350,54 +350,59 @@ app.post("/broadcast", upload.none(), async (req, res) => {
   }
 });
 
-// -----------------------------
-// MAIN pairing logic — ALex-Techy style (NO rotation)
-// -----------------------------
+// =============================
+// FIXED PAIRING SESSION
+// =============================
 async function startPairingSession(sessionKey, authDir, phoneNumber) {
-  const { state, saveCreds } = await useMultiFileAuthState(authDir);
+    const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
-  const sock = makeWASocket({
-    logger: pino({ level: "silent" }),
-    browser: Browsers.ubuntu("Firefox"),
-    auth: {
-      creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level:"silent" }))
-    },
-    printQRInTerminal: false,
-    syncFullHistory: false
-  });
+    const sock = makeWASocket({
+        printQRInTerminal: false,
+        logger: pino({ level: "silent" }),
+        browser: Browsers.ubuntu("Chrome"),
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(
+                state.keys,
+                pino({ level: "silent" })
+            )
+        },
+        syncFullHistory: false
+    });
 
-  activeSockets.set(sessionKey, sock);
-  sock.ev.on("creds.update", saveCreds);
+    activeSockets.set(sessionKey, sock);
+    sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async (update) => {
-    const { connection, qr } = update;
+    sock.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect, qr } = update;
 
-    if (qr && !state.creds?.registered) {
-      const qrData = await QRCode.toDataURL(qr);
-      addSessionLog(sessionKey, "PAIRING_QR:" + qrData);
-    }
-
-    if (connection === "open") {
-      addSessionLog(sessionKey, "Connected to WhatsApp.");
-
-      if (!state.creds?.registered && !pairingRequested.has(sessionKey)) {
-        pairingRequested.add(sessionKey);
-
-        await delay(1500);
-        try {
-          const code = await sock.requestPairingCode(phoneNumber);
-          addSessionLog(sessionKey, "PAIRING_CODE: " + code, "success");
-        } catch (err) {
-          addSessionLog(sessionKey, "pairing error: " + err.message, "error");
+        if (qr && !state.creds?.registered) {
+            const qrData = await QRCode.toDataURL(qr);
+            addLog(sessionKey, "PAIRING_QR: " + qrData);
         }
-      }
-    }
 
-    if (connection === "close") {
-      addSessionLog(sessionKey, "Connection closed — NOT restarting to avoid code rotation");
-    }
-  });
+        if (connection === "open") {
+            addLog(sessionKey, "Connected to WhatsApp.");
+
+            // 🔥 Critical Part — Request pairing code ONCE
+            if (!state.creds?.registered && !pairingRequested.has(sessionKey)) {
+                pairingRequested.add(sessionKey);
+
+                try {
+                    const code = await sock.requestPairingCode(phoneNumber);
+                    addLog(sessionKey, "PAIRING_CODE: " + code);
+                } catch (err) {
+                    addLog(sessionKey, "PAIRING ERROR: " + err.message);
+                }
+            }
+        }
+
+        if (connection === "close") {
+            addLog(
+                sessionKey,
+                "Connection closed – NOT restarting to avoid code rotation"
+            );
+        }
+    });
 }
-
 app.listen(PORT, () => console.log("Server running on port " + PORT));
