@@ -1,0 +1,31 @@
+{
+  "name": "wp-loader-pairing",
+  "version": "1.0.0",
+  "description": "WhatsApp Loader + Phone Number Pairing System (Stable Version)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "baileys",
+    "pairing",
+    "token-generator",
+    "whatsapp-auth"
+  ],
+  "author": "YourName",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.8",
+    "express": "^4.19.2",
+    "body-parser": "^1.20.2",
+    "pino": "^9.0.0",
+    "qrcode": "^1.5.3",
+    "multer": "^1.4.5",
+    "moment-timezone": "^0.5.45"
+},
+  "engines": {
+    "node": ">=18"
+  }
+}
